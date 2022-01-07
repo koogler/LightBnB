@@ -18,12 +18,15 @@ const pool = new Pool({
  */
 const getUserWithEmail = function (email) {
   return pool
-    .query(`SELECT * FROM users WHERE email = $1`, [email])
+    .query(`
+    SELECT * 
+    FROM users 
+    WHERE email = $1`, [email])
     .then((res) => {
-      console.log(res.rows[0].name)
+      return res.rows[0];
     })
     .catch((err) => {
-      console.log(null);
+      return null;
     });
 }
 exports.getUserWithEmail = getUserWithEmail;
@@ -35,12 +38,15 @@ exports.getUserWithEmail = getUserWithEmail;
  */
 const getUserWithId = function (id) {
   return pool
-    .query(`SELECT * FROM users WHERE id = $1`, [email])
+    .query(`
+    SELECT * 
+    FROM users 
+    WHERE id = $1`, [id])
     .then((res) => {
-      console.log(res.rows[0].name)
+      return res.rows[0];
     })
     .catch((err) => {
-      console.log(null);
+      return null
     });
 }
 exports.getUserWithId = getUserWithId;
@@ -53,7 +59,10 @@ exports.getUserWithId = getUserWithId;
  */
 const addUser = function (user) {
   return pool
-    .query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`, [user.name, user.email, user.password])
+    .query(`
+    INSERT INTO users (name, email, password) 
+    VALUES ($1, $2, $3) 
+    RETURNING *;`, [user.name, user.email, user.password])
     .then((res) => {
       console.log(res.rows[0])
     })
@@ -71,7 +80,21 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  return pool
+    .query(`
+    SELECT reservations.*, properties.* 
+    FROM properties
+    JOIN reservations ON properties.id = reservations.property_id
+    WHERE reservations.guest_id = $1 AND end_date < now()::date
+    GROUP BY properties.id, reservations.id
+    ORDER BY start_date
+    LIMIT $2`, [guest_id, limit])
+    .then((res) => {
+      return res.rows[0];
+    })
+    .catch((err) => {
+      return null;
+    });
 }
 exports.getAllReservations = getAllReservations;
 
